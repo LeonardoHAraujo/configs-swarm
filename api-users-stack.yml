@@ -5,6 +5,7 @@ services:
     image: ledharaujo/ms-users:latest
     networks:
       - traefik-public
+      - ms-users
     deploy:
       replicas: 1
       restart_policy:
@@ -27,4 +28,7 @@ services:
 networks:
   traefik-public:
     external: true
+  ms-users:
+    external: true
 
+# docker network create --driver overlay ms-users
