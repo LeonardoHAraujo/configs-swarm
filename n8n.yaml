@@ -5,11 +5,11 @@ services:
     image: n8nio/n8n:latest
     environment:
       - N8N_BASIC_AUTH_ACTIVE=true
-      - N8N_BASIC_AUTH_USER=ledharaujo
-      - N8N_BASIC_AUTH_PASSWORD=Z1WMNlvvKtTbYO3363
-      - N8N_HOST=n8n.la.dev.br
+      - N8N_BASIC_AUTH_USER=dev@somvibe.com
+      - N8N_BASIC_AUTH_PASSWORD=123
+      - N8N_HOST=n8n-somvibe.la.dev.br
       - N8N_PORT=5678
-      - WEBHOOK_URL=https://n8n.la.dev.br/
+      - WEBHOOK_URL=https://n8n-somvibe.la.dev.br/
     networks:
       - traefik-public
       - n8n
@@ -27,10 +27,20 @@ services:
       labels:
         - "traefik.enable=true"
         - "traefik.docker.network=traefik-public"
-        - "traefik.http.routers.n8n.rule=Host(`n8n.la.dev.br`)"
+
+        # Router HTTPS
+        - "traefik.http.routers.n8n.rule=Host(`n8n-somvibe.la.dev.br`)"
         - "traefik.http.routers.n8n.entrypoints=websecure"
         - "traefik.http.routers.n8n.tls.certresolver=letsencrypt"
         - "traefik.http.services.n8n.loadbalancer.server.port=5678"
+
+        # Router HTTP -> HTTPS redirect
+        - "traefik.http.routers.n8n-http.rule=Host(`n8n-somvibe.la.dev.br`)"
+        - "traefik.http.routers.n8n-http.entrypoints=web"
+        - "traefik.http.routers.n8n-http.middlewares=n8n-https-redirect"
+
+        # Middleware para forçar HTTPS
+        - "traefik.http.middlewares.n8n-https-redirect.redirectscheme.scheme=https"
 
 volumes:
   n8n_data:
@@ -40,4 +50,3 @@ networks:
     external: true
   n8n:
     external: true
-
