@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  api:
+    image: ledharaujo/ms-efolha:latest
+    env_file: .env
+    command: sh -c "sh migration.sh && sleep 10 && node dist/src/main.js"
+    networks:
+      - traefik-public
+      - ms-efolha
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+      labels:
+        - "traefik.enable=true"
+        - "traefik.docker.network=traefik-public"
+
+        # --- Router HTTP (redireciona para HTTPS)
+        - "traefik.http.routers.efolha-http.rule=Host(`api.followorker.com.br`) && PathPrefix(`/efolha`)"
+        - "traefik.http.routers.efolha-http.entrypoints=web"
+        - "traefik.http.routers.efolha-http.middlewares=https-redirect"
+
+        # --- Middleware de redirecionamento
+        - "traefik.http.middlewares.https-redirect.redirectscheme.scheme=https"
+
+        # --- Router HTTPS
+        - "traefik.http.routers.efolha.rule=Host(`api.followorker.com.br`) && PathPrefix(`/efolha`)"
+        - "traefik.http.routers.efolha.entrypoints=websecure"
+        - "traefik.http.routers.efolha.tls.certresolver=letsencrypt"
+        - "traefik.http.routers.efolha.middlewares=efolha-strip-prefix"
+        - "traefik.http.middlewares.efolha-strip-prefix.stripPrefix.prefixes=/efolha"
+        - "traefik.http.services.efolha.loadbalancer.server.port=3433"
+
+networks:
+  traefik-public:
+    external: true
+  ms-efolha:
+    external: true
+
+# docker network create --driver overlay ms-efolha
