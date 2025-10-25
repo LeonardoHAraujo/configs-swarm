@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  vaultwarden:
+    image: vaultwarden/server:latest
+    networks:
+      - traefik-public
+      - vaultwarden
+    environment:
+      DOMAIN: "https://vw.domain.tld"
+      SIGNUPS_ALLOWED: "false"
+    volumes:
+      - vw-data:/data/
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+      labels:
+        - "traefik.enable=true"
+        - "traefik.docker.network=traefik-public"
+
+        # --- HTTPS Router ---
+        - "traefik.http.routers.vw.rule=Host(`vaultwarden.la.dev.br`)"
+        - "traefik.http.routers.vw.entrypoints=websecure"
+        - "traefik.http.routers.vw.tls.certresolver=letsencrypt"
+        - "traefik.http.services.vw.loadbalancer.server.port=80"
+
+        # --- HTTP -> HTTPS Redirect ---
+        - "traefik.http.routers.vw-http.rule=Host(`vaultwarden.la.dev.br`)"
+        - "traefik.http.routers.vw-http.entrypoints=web"
+        - "traefik.http.routers.vw-http.middlewares=redirect-to-https"
+        - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+
+volumes:
+  vw-data:
+
+networks:
+  traefik-public:
+    external: true
+  vaultwarden:
+    external: true
