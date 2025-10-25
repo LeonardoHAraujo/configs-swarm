@@ -19,10 +19,20 @@ services:
           - node.role == manager
       labels:
         - "traefik.enable=true"
+
+        # --- HTTPS router ---
         - "traefik.http.routers.portainer.rule=Host(`portainer.la.dev.br`)"
         - "traefik.http.routers.portainer.entrypoints=websecure"
         - "traefik.http.routers.portainer.tls.certresolver=letsencrypt"
         - "traefik.http.services.portainer.loadbalancer.server.port=9000"
+
+        # --- HTTP -> HTTPS redirect router ---
+        - "traefik.http.routers.portainer-http.rule=Host(`portainer.la.dev.br`)"
+        - "traefik.http.routers.portainer-http.entrypoints=web"
+        - "traefik.http.routers.portainer-http.middlewares=redirect-to-https"
+
+        # --- Middleware para redirecionar ---
+        - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
 
 volumes:
   portainer_data:
