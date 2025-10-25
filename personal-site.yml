@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  personal:
+    image: ledharaujo/personal-site:2
+    networks:
+      - traefik-public
+      - personal-site
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          memory: 64M
+        reservations:
+          memory: 16M
+      labels:
+        - "traefik.enable=true"
+        - "traefik.docker.network=traefik-public"
+
+        # HTTPS
+        - "traefik.http.routers.site.rule=Host(`la.dev.br`)"
+        - "traefik.http.routers.site.entrypoints=websecure"
+        - "traefik.http.routers.site.tls.certresolver=letsencrypt"
+        - "traefik.http.services.site.loadbalancer.server.port=8080"
+
+        # HTTP -> HTTPS
+        - "traefik.http.routers.site-http.rule=Host(`la.dev.br`)"
+        - "traefik.http.routers.site-http.entrypoints=web"
+        - "traefik.http.routers.site-http.middlewares=redirect-to-https"
+        - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+
+networks:
+  traefik-public:
+    external: true
+  personal-site:
+    external: true
